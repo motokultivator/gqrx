@@ -25,9 +25,12 @@
 
 #if GNURADIO_VERSION < 0x030800
 #include <gnuradio/blocks/multiply_const_ff.h>
+#include <gnuradio/blocks/add_ff.h>
 #else
 #include <gnuradio/blocks/multiply_const.h>
+#include <gnuradio/blocks/add_blk.h>
 #endif
+
 
 #include <gnuradio/blocks/file_sink.h>
 #include <gnuradio/blocks/null_sink.h>
@@ -109,6 +112,17 @@ public:
         FILTER_SHAPE_SHARP = 2   /*!< Sharp: Transition band is TBD of width. */
     };
 
+    struct demodulator {
+        rx_demod d_demod;       /*!< Demodulator. */
+        receiver_base_cf_sptr rx;                  /*!< receiver. */
+        downconverter_cc_sptr ddc;        /*!< Digital down-converter for demod chain. */
+        gr::blocks::multiply_const_ff::sptr gain0;
+        gr::blocks::multiply_const_ff::sptr gain1;
+        double      d_filter_offset;    /*!< Current filter offset */
+        double      d_cw_offset;        /*!< CW offset */
+        rx_chain rx_type;
+    };
+
     receiver(const std::string input_device="",
              const std::string audio_device="",
              unsigned int decimation=1);
@@ -155,11 +169,11 @@ public:
     status      set_gain(std::string name, double value);
     double      get_gain(std::string name) const;
 
-    status      set_filter_offset(double offset_hz);
-    double      get_filter_offset(void) const;
-    status      set_cw_offset(double offset_hz);
-    double      get_cw_offset(void) const;
-    status      set_filter(double low, double high, filter_shape shape);
+    status      set_filter_offset(double offset_hzm, int n = 0);
+    double      get_filter_offset(int n = 0) const;
+    status      set_cw_offset(double offset_hz, int n = 0);
+    double      get_cw_offset(int n = 0) const;
+    status      set_filter(double low, double high, filter_shape shape, int n = 0);
     status      set_freq_corr(double ppm);
     float       get_signal_pwr(bool dbfs) const;
     void        set_iq_fft_size(int newsize);
@@ -170,29 +184,29 @@ public:
                                    unsigned int &fftsize);
 
     /* Noise blanker */
-    status      set_nb_on(int nbid, bool on);
-    status      set_nb_threshold(int nbid, float threshold);
+    status      set_nb_on(int nbid, bool on, int n = 0);
+    status      set_nb_threshold(int nbid, float threshold, int n = 0);
 
     /* Squelch parameter */
-    status      set_sql_level(double level_db);
-    status      set_sql_alpha(double alpha);
+    status      set_sql_level(double level_db, int n = 0);
+    status      set_sql_alpha(double alpha, int n = 0);
 
     /* AGC */
-    status      set_agc_on(bool agc_on);
-    status      set_agc_hang(bool use_hang);
-    status      set_agc_threshold(int threshold);
-    status      set_agc_slope(int slope);
-    status      set_agc_decay(int decay_ms);
-    status      set_agc_manual_gain(int gain);
+    status      set_agc_on(bool agc_on, int n = 0);
+    status      set_agc_hang(bool use_hang, int n = 0);
+    status      set_agc_threshold(int threshold, int n = 0);
+    status      set_agc_slope(int slope, int n = 0);
+    status      set_agc_decay(int decay_ms, int n = 0);
+    status      set_agc_manual_gain(int gain, int n = 0);
 
-    status      set_demod(rx_demod demod);
+    status      set_demod(rx_demod demod, int n = 0);
 
     /* FM parameters */
-    status      set_fm_maxdev(float maxdev_hz);
-    status      set_fm_deemph(double tau);
+    status      set_fm_maxdev(float maxdev_hz, int n = 0);
+    status      set_fm_deemph(double tau, int n = 0);
 
     /* AM parameters */
-    status      set_am_dcr(bool enabled);
+    status      set_am_dcr(bool enabled, int n = 0);
 
     /* Audio parameters */
     status      set_af_gain(float gain_db);
@@ -225,7 +239,7 @@ public:
     void        reset_rds_parser(void);
 
 private:
-    void        connect_all(rx_chain type);
+    void        connect_all();
 
 private:
     bool        d_running;          /*!< Whether receiver is running or not. */
@@ -236,8 +250,6 @@ private:
     unsigned int    d_decim;        /*!< input decimation. */
     unsigned int    d_ddc_decim;    /*!< Down-conversion decimation. */
     double      d_rf_freq;          /*!< Current RF frequency. */
-    double      d_filter_offset;    /*!< Current filter offset */
-    double      d_cw_offset;        /*!< CW offset */
     bool        d_recording_iq;     /*!< Whether we are recording I/Q file. */
     bool        d_recording_wav;    /*!< Whether we are recording WAV file. */
     bool        d_sniffer_active;   /*!< Only one data decoder allowed. */
@@ -248,13 +260,10 @@ private:
     std::string input_devstr;  /*!< Current input device string. */
     std::string output_devstr; /*!< Current output device string. */
 
-    rx_demod    d_demod;       /*!< Current demodulator. */
-
     gr::top_block_sptr         tb;        /*!< The GNU Radio top block. */
 
     osmosdr::source::sptr     src;       /*!< Real time I/Q source. */
     fir_decim_cc_sptr         input_decim;      /*!< Input decimator. */
-    receiver_base_cf_sptr     rx;        /*!< receiver. */
 
     dc_corr_cc_sptr           dc_corr;   /*!< DC corrector block. */
     iq_swap_cc_sptr           iq_swap;   /*!< I/Q swapping block. */
@@ -262,10 +271,11 @@ private:
     rx_fft_c_sptr             iq_fft;     /*!< Baseband FFT block. */
     rx_fft_f_sptr             audio_fft;  /*!< Audio FFT block. */
 
-    downconverter_cc_sptr     ddc;        /*!< Digital down-converter for demod chain. */
-
     gr::blocks::multiply_const_ff::sptr audio_gain0; /*!< Audio gain block. */
     gr::blocks::multiply_const_ff::sptr audio_gain1; /*!< Audio gain block. */
+
+    gr::blocks::add_ff::sptr  mixer0;
+    gr::blocks::add_ff::sptr  mixer1;
 
     gr::blocks::file_sink::sptr         iq_sink;     /*!< I/Q file sink. */
 
@@ -277,6 +287,8 @@ private:
     udp_sink_f_sptr   audio_udp_sink;  /*!< UDP sink to stream audio over the network. */
     sniffer_f_sptr    sniffer;    /*!< Sample sniffer for data decoders. */
     resampler_ff_sptr sniffer_rr; /*!< Sniffer resampler. */
+
+    std::vector<demodulator> demod;
 
 #ifdef WITH_PULSEAUDIO
     pa_sink_sptr              audio_snk;  /*!< Pulse audio sink. */
