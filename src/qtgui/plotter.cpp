@@ -1300,6 +1300,8 @@ void CPlotter::drawOverlay()
         for (int i = 0; i < bookmarks.size(); i++)
         {
             x = xFromFreq(bookmarks[i].frequency);
+            int x0 = xFromFreq(bookmarks[i].frequency - bookmarks[i].bandwidth / 2);
+            int dx = xFromFreq(bookmarks[i].frequency + bookmarks[i].bandwidth / 2) - x0;
 
 #if defined(_WIN16) || defined(_WIN32) || defined(_WIN64)
             int nameWidth = fm.width(bookmarks[i].name);
@@ -1330,7 +1332,7 @@ void CPlotter::drawOverlay()
             color.setAlpha(0x60);
             // Vertical line
             painter.setPen(QPen(color, 1, Qt::DashLine));
-            painter.drawLine(x, levelNHeightBottomSlant, x, xAxisTop);
+            painter.fillRect(x0, levelNHeightBottomSlant, dx, xAxisTop - levelNHeightBottomSlant, color);
 
             // Horizontal line
             painter.setPen(QPen(color, 1, Qt::SolidLine));
