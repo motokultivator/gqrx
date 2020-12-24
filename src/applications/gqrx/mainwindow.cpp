@@ -55,7 +55,7 @@
 #include "ui_mainwindow.h"
 
 /* DSP */
-#include "receiver.h"
+#include "mul_receiver.h"
 #include "remote_control_settings.h"
 
 #include "qtgui/bookmarkstaglist.h"
@@ -97,7 +97,7 @@ MainWindow::MainWindow(const QString& cfgfile, bool edit_conf, QWidget *parent) 
     d_filter_shape = receiver::FILTER_SHAPE_NORMAL;
 
     /* create receiver object */
-    rx = new receiver("", "", 1);
+    rx = new mul_receiver("", "", 1);
     rx->set_rf_freq(144500000.0f);
 
     // remote controller
@@ -1173,6 +1173,20 @@ void MainWindow::selectDemod(int mode_idx)
         uiDockAudio->setFftRange(0,1500);
         click_res = 10;
         break;
+
+    /* YU4DJI */
+    case DockRxOpt::MODE_BOOK:
+    {
+        ui->plotter->setDemodRanges(-40000, -1000, 1000, 40000, true);
+        uiDockAudio->setFftRange(0, 5000);
+        rx->set_demod(receiver::RX_DEMOD_NFM);
+        rx->set_fm_maxdev(uiDockRxOpt->currentMaxdev());
+        rx->set_fm_deemph(uiDockRxOpt->currentEmph());
+        click_res = 100;
+        uiDockRxOpt->setFilterOffset(0); // => setFilterOffset(0);
+        std::cout << "Freq: " << d_hw_freq << "\n";
+        break;
+    }
 
     default:
         qDebug() << "Unsupported mode selection (can't happen!): " << mode_idx;

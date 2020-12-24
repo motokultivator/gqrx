@@ -45,7 +45,7 @@
 
 #include "applications/gqrx/recentconfig.h"
 #include "applications/gqrx/remote_control.h"
-#include "applications/gqrx/receiver.h"
+#include "applications/gqrx/mul_receiver.h"
 
 namespace Ui {
     class MainWindow;  /*! The main window UI */
@@ -111,7 +111,7 @@ private:
     QTimer   *audio_fft_timer;
     QTimer   *rds_timer;
 
-    receiver *rx;
+    mul_receiver *rx;
 
     RemoteControl *remote;
 

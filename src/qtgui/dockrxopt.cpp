@@ -44,7 +44,8 @@ static const int filter_preset_table[DockRxOpt::MODE_LAST][3][2] =
     {{  -1000,   1000}, {  -250,   250}, {  -100,   100}},  // MODE_CWL
     {{  -1000,   1000}, {  -250,   250}, {  -100,   100}},  // MODE_CWU
     {{-100000, 100000}, {-80000, 80000}, {-60000, 60000}},  // MODE_WFM_STEREO_OIRT
-    {{ -10000,  10000}, { -5000,  5000}, { -2500,  2500}}   // MODE_AMSYNC
+    {{ -10000,  10000}, { -5000,  5000}, { -2500,  2500}},  // MODE_AMSYNC
+    {{ -10000,  10000}, { -5000,  5000}, { -2500,  2500}},  // MODE_BOOK
 };
 
 DockRxOpt::DockRxOpt(qint64 filterOffsetRange, QWidget *parent) :
@@ -70,6 +71,7 @@ DockRxOpt::DockRxOpt(qint64 filterOffsetRange, QWidget *parent) :
         ModulationStrings.append("CW-U");
         ModulationStrings.append("WFM (oirt)");
         ModulationStrings.append("AM-Sync");
+        ModulationStrings.append("Bookmarks");
     }
     ui->modeSelector->addItems(ModulationStrings);
 
